@@ -11,12 +11,13 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    
+
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
    
     Route::post('/categories', [CategoryController::class, 'store']);
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
 });
 
