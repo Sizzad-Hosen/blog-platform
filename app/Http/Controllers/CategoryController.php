@@ -64,4 +64,20 @@ class CategoryController extends Controller
         $category->delete();
         return response()->json(['message' => 'Category deleted']);
     }
+
+    public function update(Request $request, $id)
+    {
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
+
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $category->update($request->only('name','description'));
+        return response()->json($category);
+    }
+
 }
