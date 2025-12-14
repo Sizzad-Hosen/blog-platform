@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PostController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -20,6 +21,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
     Route::put('/categories/{id}', [CategoryController::class, 'update']);
 
+});
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    
+    
+    Route::get('/posts', [PostController::class, 'index']);
+    Route::get('/posts/{id}', [PostController::class, 'show']);
+    
+    Route::post('/posts', [PostController::class, 'store']);
+    Route::put('/posts/{id}', [PostController::class, 'update']);
+    Route::delete('/posts/{id}', [PostController::class, 'destroy']);
 });
 
 // Route::get('/test', function () {
