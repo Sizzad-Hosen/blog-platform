@@ -4,11 +4,27 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Category;
+use App\Http\Resources\CategoryResource;
+use App\Traits\ResponseTrait;
 
 class CategoryController extends Controller
 {
+    use ResponseTrait;
 
-    //  Create category (admin only)
+  
+    public function index()
+    {
+        $categories = Category::all();
+        return $this->sendResponse(CategoryResource::collection($categories), 'Categories retrieved successfully');
+    }
+
+
+    public function show($id)
+    {
+        $category = Category::findOrFail($id);
+        return $this->sendResponse(new CategoryResource($category), 'Category retrieved successfully');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -16,68 +32,32 @@ class CategoryController extends Controller
             'description' => 'nullable|string',
         ]);
 
-     
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $category = Category::create($request->only('name', 'description'));
 
-        $category = Category::create($request->only('name','description'));
-
-       return response()->json([
-        'message' => 'Category created successfully',
-        'category' => $category
-    ], 201);
-         
+        return $this->sendResponse(new CategoryResource($category), 'Category created successfully', 201);
     }
 
-   // List all categories
-    public function index()
-    {
-        $AllCategory = Category::all();
-
-        return response()->json($AllCategory);
-    }
-
-    // Show single category
-    public function show($id)
-    {
-        $category = Category::find($id);
-        if (!$category) {
-            return response()->json(['message' => 'Category not found'], 404);
-        }
-        return response()->json($category);
-    }
-
- 
-
-    public function destroy(Request $request, $id)
-    {
-        $category = Category::find($id);
-        if (!$category) {
-            return response()->json(['message' => 'Category not found'], 404);
-        }
-
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $category->delete();
-        return response()->json(['message' => 'Category deleted']);
-    }
 
     public function update(Request $request, $id)
     {
-        $category = Category::find($id);
-        if (!$category) {
-            return response()->json(['message' => 'Category not found'], 404);
-        }
+        $category = Category::findOrFail($id);
 
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|nullable|string',
+        ]);
 
-        $category->update($request->only('name','description'));
-        return response()->json($category);
+        $category->update($request->only('name', 'description'));
+
+        return $this->sendResponse(new CategoryResource($category), 'Category updated successfully');
     }
 
+
+    public function destroy($id)
+    {
+        $category = Category::findOrFail($id);
+        $category->delete();
+
+        return $this->sendResponse(null, 'Category deleted successfully');
+    }
 }

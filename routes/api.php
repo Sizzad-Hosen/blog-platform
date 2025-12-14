@@ -6,41 +6,41 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
 use Illuminate\Support\Facades\Route;
 
+
+
+// Auth
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
+
+
+// Admin  only access
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    // Categories
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{id}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+});
+
+// Authenticated user 
 Route::middleware('auth:sanctum')->group(function () {
 
 
+    // Categories (read-only for all  users)
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-   
-    Route::post('/categories', [CategoryController::class, 'store']);
-    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
-    Route::put('/categories/{id}', [CategoryController::class, 'update']);
-
-});
-
-
-Route::middleware('auth:sanctum')->group(function () {
-    
-    
+    // Posts
     Route::get('/posts', [PostController::class, 'index']);
     Route::get('/posts/{id}', [PostController::class, 'show']);
-    
     Route::post('/posts', [PostController::class, 'store']);
     Route::put('/posts/{id}', [PostController::class, 'update']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
-});
 
-Route::middleware('auth:sanctum')->group(function () {
-
-
+    // Comments
+    Route::get('/posts/{postId}/comments', [CommentController::class, 'index']);
     Route::post('/posts/{postId}/comments', [CommentController::class, 'store']);
-
-    Route::patch('/posts/{postId}/comments/{commentsId}', [CommentController::class, 'update']);
-
+    Route::patch('/posts/{postId}/comments/{commentId}', [CommentController::class, 'update']);
+    Route::delete('/comments/{commentId}', [CommentController::class, 'destroy']);
 });

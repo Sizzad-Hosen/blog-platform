@@ -5,55 +5,60 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Http\Resources\CommentResource;
+use App\Traits\ResponseTrait;
 
 
 class CommentController extends Controller
 {
-   
+    use ResponseTrait;
 
-    public function store(Request $request, $postId)
+  
+    public function index(Post $post)
     {
-        $request->validate([
-            'body' => 'required|string',
-        ]);
+        $comments = $post->comments()->with('user')->latest()->get();
 
-        $post = Post::find($postId);
-        if (!$post) {
-            return response()->json(['message'=>'Post not found'], 404);
-        }
-
-        $comment = Comment::create([
-            'body' => $request->body,
-            'post_id' => $postId,
-            'user_id' => $request->user()->id
-        ]);
-
-        return response()->json(['message'=>'Comment added', 'comment'=>$comment], 201);
+        return $this->sendResponse(CommentResource::collection($comments), 'Comments retrieved successfully');
     }
 
 
-
-public function update(Request $request, $id)
+    public function store(Request $request, Post $post)
     {
-        $comment = Comment::find($id);
-        if (!$comment) {
-            return response()->json(['message'=>'Comment not found'], 404);
-        }
-
-
-        if ($request->user()->id !== $comment->user_id ) {
-            return response()->json(['message'=>'Unauthorized'], 403);
-        }
-
         $request->validate([
-            'body' => 'required|string',
+            'body' => 'required|string|max:1000',
         ]);
 
-        $comment->update($request->only('body'));
+        $comment = $post->comments()->create([
+            'body'    => $request->body,
+            'user_id' => $request->user()->id,
+        ]);
 
-        return response()->json(['message'=>'Comment updated', 'comment'=>$comment]);
+        return $this->sendResponse(new CommentResource($comment), 'Comment added successfully', 201);
     }
 
 
+    public function update(Request $request, Post $post, Comment $comment)
+    {
+        if ($request->user()->id !== $comment->user_id) {
+            return $this->sendError('Unauthorized', [], 403);
+        }
 
+        $request->validate([
+            'body' => 'required|string|max:1000',
+        ]);
+
+        $comment->update(['body' => $request->body]);
+
+        return $this->sendResponse(new CommentResource($comment), 'Comment updated successfully');
+    }
+
+
+    public function destroy(Request $request, Comment $comment)
+    {
+        
+
+        $comment->delete();
+
+        return $this->sendResponse(null, 'Comment deleted successfully');
+    }
 }
