@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\CommentController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -35,6 +36,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
 });
 
-// Route::get('/test', function () {
-//     return 'hello world';
-// });
+Route::middleware('auth:sanctum')->group(function () {
+
+
+    Route::post('/posts/{postId}/comments', [CommentController::class, 'store']);
+
+    Route::patch('/posts/{postId}/comments/{commentsId}', [CommentController::class, 'update']);
+
+});
