@@ -54,10 +54,27 @@ class PostController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        $post = Post::findOrFail($id);
+      $post = Post::withTrashed()->findOrFail($id);
+      $post->forceDelete();
 
-        $post->delete();
-
-        return $this->sendResponse([], 'Post deleted successfully', 204);
+    return response()->json([
+        'status' => true,
+        'message' => 'Post permanently deleted'
+    ], 200);
     }
+
+
+    public function softDelete($id)
+{
+    $post = Post::findOrFail($id);
+    $post->delete();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Post soft deleted successfully'
+    ], 200);
+}
+
+
+
 }

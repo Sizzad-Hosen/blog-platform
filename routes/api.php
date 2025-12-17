@@ -16,6 +16,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
 
+Route::post('/forgot-password', [AuthController::class, 'send']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 
 // Admin  only access
@@ -48,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/posts', [PostController::class, 'store']);
     Route::put('/posts/{id}', [PostController::class, 'update']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
+    Route::delete('/posts/{id}', [PostController::class, 'softDelete']);
 
     // Comments
     Route::get('/posts/{postId}/comments', [CommentController::class, 'index']);
