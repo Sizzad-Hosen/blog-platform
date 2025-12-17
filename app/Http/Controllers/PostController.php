@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
 use App\Models\Post;
+use App\Http\Resources\PostCollection;
 use App\Http\Resources\PostResource;
 
 class PostController extends Controller
@@ -74,6 +75,35 @@ class PostController extends Controller
         'message' => 'Post soft deleted successfully'
     ], 200);
 }
+
+
+
+public function search(Request $request)
+{
+    $request->validate([
+        'q' => 'nullable|string|max:255',
+        'per_page' => 'nullable|integer|min:1|max:50',
+    ]);
+
+    $perPage = $request->get('per_page', 10);
+
+    $query = Post::query();
+
+    if ($request->filled('q')) {
+        $keyword = $request->q;
+        $query->where(function ($q) use ($keyword) {
+            $q->where('title', 'like', "%{$keyword}%")
+              ->orWhere('body', 'like', "%{$keyword}%");
+        });
+    }
+
+    $query->with(['user', 'category', 'comments']);
+
+    $posts = $query->latest()->paginate($perPage)->withQueryString();
+
+    return new PostCollection($posts);
+}
+
 
 
 

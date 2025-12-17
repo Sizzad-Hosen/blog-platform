@@ -52,9 +52,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
     Route::delete('/posts/{id}', [PostController::class, 'softDelete']);
 
+
+
     // Comments
     Route::get('/posts/{postId}/comments', [CommentController::class, 'index']);
     Route::post('/posts/{postId}/comments', [CommentController::class, 'store']);
     Route::patch('/posts/{postId}/comments/{commentId}', [CommentController::class, 'update']);
     Route::delete('/comments/{commentId}', [CommentController::class, 'destroy']);
 });
+
+
+
+    Route::get('/search', [PostController::class, 'search']);
