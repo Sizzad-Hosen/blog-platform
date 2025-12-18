@@ -14,12 +14,21 @@ class CommentController extends Controller
     use ResponseTrait;
 
   
-    public function index(Post $post)
-    {
-        $comments = $post->comments()->with('user')->latest()->get();
+public function index(Request $request, Post $post)
+{
+    $limit = $request->get('limit', 5);
+    
+    $comments = $post->comments()
+                     ->with('user')
+                     ->latest()
+                     ->take($limit)
+                     ->get();
 
-        return $this->sendResponse(CommentResource::collection($comments), 'Comments retrieved successfully');
-    }
+    return $this->sendResponse(
+        CommentResource::collection($comments),
+        'Comments retrieved successfully'
+    );
+}
 
 
     public function store(Request $request, Post $post)

@@ -12,10 +12,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'send']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
-
-
 
 
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
@@ -23,41 +20,46 @@ Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 've
     ->name('verification.verify');
 
 
-Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
-    // Categories
-    Route::post('/categories', [CategoryController::class, 'store']);
-    Route::put('/categories/{id}', [CategoryController::class, 'update']);
-    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+   
+        Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
 
-    // Posts
-    Route::delete('/posts/{id}', [PostController::class, 'destroy']);
-});
+
+        Route::patch('posts/{post}/restore', [PostController::class, 'restore']);
+        Route::delete('posts/{post}/force', [PostController::class, 'forceDelete']);
+
+    });
 
 
 Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
 
-    // Posts
-    Route::put('/posts/{id}', [PostController::class, 'update']);
-    Route::delete('/posts/{id}', [PostController::class, 'softDelete']);
 
-    // Comments
-    Route::patch('/posts/{id}/comments/{id}', [CommentController::class, 'update']);
-    Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
+    Route::put('posts/{post}', [PostController::class, 'update']);
+    Route::delete('posts/{post}', [PostController::class, 'softDelete']);
+
+
+    Route::patch('posts/{post}/comments/{comment}', [CommentController::class, 'update']);
+    Route::delete('comments/{comment}', [CommentController::class, 'destroy']);
 });
 
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::post('/posts', [PostController::class, 'store']);
-    Route::post('/posts/{id}/comments', [CommentController::class, 'store']);
+
+    Route::post('posts', [PostController::class, 'store']);
+
+    Route::post('posts/{post}/comments', [CommentController::class, 'store']);
+
 });
 
 
-// public
-Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-Route::get('/posts', [PostController::class, 'index']);
-Route::get('/posts/{id}', [PostController::class, 'show']);
-Route::get('/posts/{id}/comments', [CommentController::class, 'index']);
+Route::get('categories', [CategoryController::class, 'index']);
+Route::get('categories/{category}', [CategoryController::class, 'show']);
+
+
+Route::get('posts', [PostController::class, 'index']);
+Route::get('posts/{post}', [PostController::class, 'show']);
+
+Route::get('posts/{post}/comments', [CommentController::class, 'index']);

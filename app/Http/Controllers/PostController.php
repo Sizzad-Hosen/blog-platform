@@ -1,17 +1,41 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Http\Resources\PostCollection;
 use App\Http\Resources\PostResource;
-
-
+use Illuminate\Http\Response;
 
 class PostController extends Controller
 {
     use ResponseTrait;
+
+    public function index(Request $request)
+    {
+        $request->validate([
+            'q' => 'nullable|string|max:255',
+            'per_page' => 'nullable|integer|min:1|max:50',
+        ]);
+
+        $perPage = $request->get('per_page', 10);
+
+        $query = Post::query()->with(['user', 'category', 'comments']);
+
+        if ($request->filled('q')) {
+            $keyword = $request->q;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', "%{$keyword}%")
+                  ->orWhere('body', 'like', "%{$keyword}%");
+            });
+        }
+
+        $posts = $query->latest()->paginate($perPage)->withQueryString();
+
+        return new PostCollection($posts);
+    }
 
     public function store(Request $request)
     {
@@ -28,12 +52,12 @@ class PostController extends Controller
             'user_id'     => $request->user()->id,
         ]);
 
-        return $this->sendResponse(new PostResource($post), 'Post created successfully', 201);
+        return $this->sendResponse(new PostResource($post), 'Post created successfully', Response::HTTP_CREATED);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Post $post)
     {
-        $post = Post::findOrFail($id);
+        $this->authorize('update', $post);
 
         $request->validate([
             'title'       => 'sometimes|required|string|max:255',
@@ -46,58 +70,46 @@ class PostController extends Controller
         return $this->sendResponse(new PostResource($post), 'Post updated successfully');
     }
 
-    public function destroy(Request $request, $id)
+    
+    public function softDelete(Post $post)
     {
-      $post = Post::withTrashed()->findOrFail($id);
-      $post->forceDelete();
+        $this->authorize('delete', $post);
 
-    return response()->json([
-        'status' => true,
-        'message' => 'Post permanently deleted'
-    ], 200);
+        $post->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Post moved to trash'
+        ], Response::HTTP_OK);
     }
 
 
-    public function softDelete($id)
-{
-    $post = Post::findOrFail($id);
-    $post->delete();
+    public function restore($postId)
+    {
+        $post = Post::onlyTrashed()->findOrFail($postId);
 
-    return response()->json([
-        'status' => true,
-        'message' => 'Post soft deleted successfully'
-    ], 200);
-}
+        $this->authorize('restore', $post);
 
+        $post->restore();
 
-
-public function index(Request $request)
-{
-    $request->validate([
-        'q' => 'nullable|string|max:255',
-        'per_page' => 'nullable|integer|min:1|max:50',
-    ]);
-
-    $perPage = $request->get('per_page', 10);
-
-    $query = Post::query();
-
-    if ($request->filled('q')) {
-        $keyword = $request->q;
-        $query->where(function ($q) use ($keyword) {
-            $q->where('title', 'like', "%{$keyword}%")
-              ->orWhere('body', 'like', "%{$keyword}%");
-        });
+        return response()->json([
+            'status' => true,
+            'message' => 'Post restored successfully'
+        ], Response::HTTP_OK);
     }
 
-    $query->with(['user', 'category', 'comments']);
+    public function forceDelete($postId)
+    {
+        $post = Post::withTrashed()->findOrFail($postId);
 
-    $posts = $query->latest()->paginate($perPage)->withQueryString();
+        $this->authorize('forceDelete', $post);
 
-    return new PostCollection($posts);
-}
+        $post->forceDelete();
 
-
-
+        return response()->json([
+            'status' => true,
+            'message' => 'Post permanently deleted'
+        ], Response::HTTP_OK);
+    }
 
 }
