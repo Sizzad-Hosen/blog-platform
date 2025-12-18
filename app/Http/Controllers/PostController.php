@@ -7,17 +7,12 @@ use App\Models\Post;
 use App\Http\Resources\PostCollection;
 use App\Http\Resources\PostResource;
 
+
+
 class PostController extends Controller
 {
     use ResponseTrait;
 
-    public function index()
-    {
-        $posts = Post::with(['user', 'category', 'comments.user'])->get();
-        return $this->sendResponse(PostResource::collection($posts), 'Posts retrieved successfully');
-    }
-
-  
     public function store(Request $request)
     {
         $request->validate([
@@ -39,8 +34,6 @@ class PostController extends Controller
     public function update(Request $request, $id)
     {
         $post = Post::findOrFail($id);
-
-       
 
         $request->validate([
             'title'       => 'sometimes|required|string|max:255',
@@ -78,7 +71,7 @@ class PostController extends Controller
 
 
 
-public function search(Request $request)
+public function index(Request $request)
 {
     $request->validate([
         'q' => 'nullable|string|max:255',
