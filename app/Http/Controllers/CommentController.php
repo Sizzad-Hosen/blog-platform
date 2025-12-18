@@ -17,7 +17,7 @@ class CommentController extends Controller
 public function index(Request $request, Post $post)
 {
     $limit = $request->get('limit', 5);
-    
+
     $comments = $post->comments()
                      ->with('user')
                      ->latest()
@@ -70,8 +70,47 @@ public function index(Request $request, Post $post)
 
         return $this->sendResponse(null, 'Comment deleted successfully');
     }
+  
+ public function softDelete(Comment $comment)
+    {
+        $this->authorize('delete', $comment);
 
+        $comment->delete();
 
+        return response()->json([
+            'status' => true,
+            'message' => 'Comment moved to trash'
+        ], Response::HTTP_OK);
+    }
+
+    public function restore($commentId)
+    {
+        $comment = Comment::onlyTrashed()->findOrFail($commentId);
+
+        $this->authorize('restore', $comment);
+
+        $comment->restore();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Comment restored successfully'
+        ], Response::HTTP_OK);
+    }
+
+   
+    public function forceDelete($commentId)
+    {
+        $comment = Comment::withTrashed()->findOrFail($commentId);
+
+        $this->authorize('forceDelete', $comment);
+
+        $comment->forceDelete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Comment permanently deleted'
+        ], Response::HTTP_OK);
+    }
 
     
 }

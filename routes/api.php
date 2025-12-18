@@ -30,8 +30,13 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(functi
         Route::patch('posts/{post}/restore', [PostController::class, 'restore']);
         Route::delete('posts/{post}/force', [PostController::class, 'forceDelete']);
 
+        Route::patch('comments/{comment}/restore', [CommentController::class, 'restore']);
+
+        Route::delete('comments/{comment}/force', [CommentController::class, 'forceDelete']);
+
         Route::get('/users', [UserController::class, 'users']);
 
+        
     });
 
 
@@ -43,9 +48,10 @@ Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
 
 
     Route::patch('posts/{post}/comments/{comment}', [CommentController::class, 'update']);
-    Route::delete('comments/{comment}', [CommentController::class, 'destroy']);
 
-    Route::get('/profile', [UserController::class, 'profile']);
+    Route::delete('comments/{comment}', [CommentController::class, 'softDelete']);
+
+
 
 });
 
@@ -56,6 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('posts', [PostController::class, 'store']);
 
     Route::post('posts/{post}/comments', [CommentController::class, 'store']);
+    Route::get('/profile', [UserController::class, 'profile']);
 
 });
 
