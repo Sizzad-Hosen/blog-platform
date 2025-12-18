@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\EmailVerificationController;
 
 
@@ -29,6 +30,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(functi
         Route::patch('posts/{post}/restore', [PostController::class, 'restore']);
         Route::delete('posts/{post}/force', [PostController::class, 'forceDelete']);
 
+        Route::get('/users', [UserController::class, 'users']);
+
     });
 
 
@@ -41,6 +44,9 @@ Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
 
     Route::patch('posts/{post}/comments/{comment}', [CommentController::class, 'update']);
     Route::delete('comments/{comment}', [CommentController::class, 'destroy']);
+
+    Route::get('/profile', [UserController::class, 'profile']);
+
 });
 
 
