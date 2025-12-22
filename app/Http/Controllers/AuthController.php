@@ -57,11 +57,11 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
-        if (!$user->hasVerifiedEmail()) {
-            return response()->json([
-                'message' => 'Please verify your email before login'
-            ], 403);
-        }
+        // if (!$user->hasVerifiedEmail()) {
+        //     return response()->json([
+        //         'message' => 'Please verify your email before login'
+        //     ], 403);
+        // }
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
