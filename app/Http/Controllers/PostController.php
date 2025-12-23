@@ -13,8 +13,9 @@ class PostController extends Controller
 {
     use ResponseTrait;
 
-    public function index(Request $request)
-    {
+public function index(Request $request)
+{
+    try {
         $request->validate([
             'q' => 'nullable|string|max:255',
             'per_page' => 'nullable|integer|min:1|max:50',
@@ -35,7 +36,14 @@ class PostController extends Controller
         $posts = $query->latest()->paginate($perPage)->withQueryString();
 
         return new PostCollection($posts);
+    } catch (\Exception $e) {
+        \Log::error('Post index error: '.$e->getMessage());
+        return response()->json([
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
+
 
     public function store(Request $request)
     {
@@ -54,21 +62,24 @@ class PostController extends Controller
 
         return $this->sendResponse(new PostResource($post), 'Post created successfully', Response::HTTP_CREATED);
     }
+    
+public function update(Request $request, Post $post)
+{
+    $this->authorize('update', $post); 
 
-    public function update(Request $request, Post $post)
-    {
-        $this->authorize('update', $post);
+    $request->validate([
+        'title' => 'sometimes|required|string|max:255',
+        'body' => 'sometimes|required|string',
+        'category_id' => 'sometimes|required|exists:categories,id',
+    ]);
 
-        $request->validate([
-            'title'       => 'sometimes|required|string|max:255',
-            'body'        => 'sometimes|required|string',
-            'category_id' => 'sometimes|required|exists:categories,id',
-        ]);
+    $post->update($request->only(['title', 'body', 'category_id']));
 
-        $post->update($request->only(['title', 'body', 'category_id']));
-
-        return $this->sendResponse(new PostResource($post), 'Post updated successfully');
-    }
+    return response()->json([
+        'message' => 'Post updated successfully',
+        'post' => $post
+    ]);
+}
 
     
     public function softDelete(Post $post)
