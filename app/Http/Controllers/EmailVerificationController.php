@@ -27,4 +27,15 @@ public function verify(Request $request, $id, $hash)
     return response()->json(['message' => 'Email verified successfully']);
 }
 
+   public function resend(Request $request)
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+             return response()->json(['message' => 'Email already verified']);
+        }
+
+        $request->user()->sendEmailVerificationNotification();
+
+        return back()->with('success', 'Verification link sent!');
+    }
+
 }

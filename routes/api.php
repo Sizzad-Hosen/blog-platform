@@ -17,7 +17,9 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
     ->middleware('signed')
     ->name('verification.verify');
-
+// Optional: Public resend for users not logged in (from login page)
+Route::post('/email/resend-verification', [VerificationController::class, 'resendFromLogin']);
+   
 // Load admin 
 Route::prefix('admin')->group(base_path('routes/admin.php'));
 
