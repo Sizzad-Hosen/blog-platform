@@ -12,29 +12,7 @@ use Illuminate\Http\Response;
 class PostController extends Controller
 {
     use ResponseTrait;
-//     public function index()
-// {
-//     try {
-//         // Get all posts with relationships
-//         $posts = Post::with(['user', 'category', 'comments'])->get();
 
-//         return response()->json([
-//             'status' => true,
-//             'message' => $posts->isEmpty() 
-//                         ? 'No posts found' 
-//                         : 'Posts retrieved successfully',
-//             'data' => $posts
-//         ]);
-//     } catch (\Exception $e) {
-//         \Log::error('Post index error: '.$e->getMessage());
-
-//         return response()->json([
-//             'status' => false,
-//             'message' => 'Internal Server Error',
-//             'error' => $e->getMessage() // shows the real reason
-//         ], 500);
-//     }
-// }
 
 public function index(Request $request)
 {

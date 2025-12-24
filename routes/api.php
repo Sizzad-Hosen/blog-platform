@@ -20,14 +20,13 @@ Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 've
 
 // Load admin 
 Route::prefix('admin')->group(base_path('routes/admin.php'));
-Route::get('posts', [PostController::class, 'index']);
+
 // User access routes
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::patch('posts/{post}', [PostController::class, 'update']);
+    Route::put('posts/{post}', [PostController::class, 'update']);
     Route::delete('posts/{post}', [PostController::class, 'softDelete']);
     Route::patch('posts/{post}/comments/{comment}', [CommentController::class, 'update']);
     Route::delete('comments/{comment}', [CommentController::class, 'softDelete']);
-
     Route::post('posts', [PostController::class, 'store']);
     Route::post('posts/{post}/comments', [CommentController::class, 'store']);
   
@@ -36,6 +35,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 // Public routes
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('categories/{category}', [CategoryController::class, 'show']);
-
+Route::get('posts', [PostController::class, 'index']);
 Route::get('posts/{post}', [PostController::class, 'show']);
 Route::get('posts/{post}/comments', [CommentController::class, 'index']);
