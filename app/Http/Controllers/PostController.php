@@ -12,76 +12,94 @@ use Illuminate\Http\Response;
 class PostController extends Controller
 {
     use ResponseTrait;
+//     public function index()
+// {
+//     try {
+//         // Get all posts with relationships
+//         $posts = Post::with(['user', 'category', 'comments'])->get();
+
+//         return response()->json([
+//             'status' => true,
+//             'message' => $posts->isEmpty() 
+//                         ? 'No posts found' 
+//                         : 'Posts retrieved successfully',
+//             'data' => $posts
+//         ]);
+//     } catch (\Exception $e) {
+//         \Log::error('Post index error: '.$e->getMessage());
+
+//         return response()->json([
+//             'status' => false,
+//             'message' => 'Internal Server Error',
+//             'error' => $e->getMessage() // shows the real reason
+//         ], 500);
+//     }
+// }
 
 public function index(Request $request)
 {
-    try {
-        $request->validate([
-            'q' => 'nullable|string|max:255',
-            'per_page' => 'nullable|integer|min:1|max:50',
-        ]);
+    $request->validate([
+        'q' => 'nullable|string|max:255',
+        'per_page' => 'nullable|integer|min:1|max:50',
+    ]);
 
-        $perPage = $request->get('per_page', 10);
+    $perPage = $request->get('per_page', 10);
 
-        $query = Post::query()->with(['user', 'category', 'comments']);
+    $query = Post::with(['user', 'category', 'comments']);
 
-        if ($request->filled('q')) {
-            $keyword = $request->q;
-            $query->where(function ($q) use ($keyword) {
-                $q->where('title', 'like', "%{$keyword}%")
-                  ->orWhere('body', 'like', "%{$keyword}%");
-            });
-        }
-
-        $posts = $query->latest()->paginate($perPage)->withQueryString();
-
-        return new PostCollection($posts);
-    } catch (\Exception $e) {
-        \Log::error('Post index error: '.$e->getMessage());
-        return response()->json([
-            'error' => $e->getMessage(),
-        ], 500);
+    if ($request->filled('q')) {
+        $query->where(function ($q) use ($request) {
+            $q->where('title', 'like', "%{$request->q}%")
+              ->orWhere('body', 'like', "%{$request->q}%");
+        });
     }
+
+    return new PostCollection(
+        $query->latest()->paginate($perPage)->withQueryString()
+    );
 }
-
-
     public function store(Request $request)
     {
         $request->validate([
-            'title'       => 'required|string|max:255',
-            'body'        => 'required|string',
+            'title' => 'required|string|max:255',
+            'body' => 'required|string',
             'category_id' => 'required|exists:categories,id',
         ]);
 
         $post = Post::create([
-            'title'       => $request->title,
-            'body'        => $request->body,
+            'title' => $request->title,
+            'body' => $request->body,
             'category_id' => $request->category_id,
-            'user_id'     => $request->user()->id,
+            'user_id' => $request->user()->id,
         ]);
 
-        return $this->sendResponse(new PostResource($post), 'Post created successfully', Response::HTTP_CREATED);
+        return $this->sendResponse(
+            new PostResource($post),
+            'Post created successfully',
+            Response::HTTP_CREATED
+        );
     }
-    
-public function update(Request $request, Post $post)
-{
-    $this->authorize('update', $post); 
 
-    $request->validate([
-        'title' => 'sometimes|required|string|max:255',
-        'body' => 'sometimes|required|string',
-        'category_id' => 'sometimes|required|exists:categories,id',
-    ]);
+    public function update(Request $request, Post $post)
+    {
+        $this->authorize('update', $post);
 
-    $post->update($request->only(['title', 'body', 'category_id']));
+        $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'body' => 'sometimes|required|string',
+            'category_id' => 'sometimes|required|exists:categories,id',
+        ]);
 
-    return response()->json([
-        'message' => 'Post updated successfully',
-        'post' => $post
-    ]);
-}
+        $post->update(
+            $request->only(['title', 'body', 'category_id'])
+        );
 
-    
+        return response()->json([
+            'message' => 'Post updated successfully',
+            'post' => $post
+        ]);
+    }
+
     public function softDelete(Post $post)
     {
         $this->authorize('delete', $post);
@@ -91,9 +109,8 @@ public function update(Request $request, Post $post)
         return response()->json([
             'status' => true,
             'message' => 'Post moved to trash'
-        ], Response::HTTP_OK);
+        ]);
     }
-
 
     public function restore($postId)
     {
@@ -106,7 +123,7 @@ public function update(Request $request, Post $post)
         return response()->json([
             'status' => true,
             'message' => 'Post restored successfully'
-        ], Response::HTTP_OK);
+        ]);
     }
 
     public function forceDelete($postId)
@@ -120,7 +137,6 @@ public function update(Request $request, Post $post)
         return response()->json([
             'status' => true,
             'message' => 'Post permanently deleted'
-        ], Response::HTTP_OK);
+        ]);
     }
-
 }
