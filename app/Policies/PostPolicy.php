@@ -25,7 +25,7 @@ public function restore(User $user, Post $post)
 
     public function update(User $user, Post $post): Response
     {
-        return $user->id === $post->user_id || $user->role === 'admin'
+        return $user->id === $post->user_id
             ? Response::allow()
             : Response::deny('Unauthorized');
     }

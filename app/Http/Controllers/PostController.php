@@ -14,65 +14,55 @@ class PostController extends Controller
 {
     use ResponseTrait;
     use AuthorizesRequests;
-public function index(Request $request)
-{
-    try {
-        // Validate query params
-        $request->validate([
-            'q' => 'nullable|string|max:255',
-            'per_page' => 'nullable|integer|min:1|max:50',
-        ]);
 
-        $perPage = $request->get('per_page', 10);
 
-        // Query posts with relationships
-        $query = Post::with(['user', 'category', 'comments']);
-
-        // Search filter
-        if ($request->filled('q')) {
-            $keyword = $request->q;
-            $query->where(function ($q) use ($keyword) {
-                $q->where('title', 'like', "%{$keyword}%")
-                  ->orWhere('body', 'like', "%{$keyword}%");
-            });
-        }
-
-        // Only non-deleted posts (if using SoftDeletes)
-        if (in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses(Post::class))) {
-            $query->whereNull('deleted_at');
-        }
-
-        // Paginate results
-        $posts = $query->latest()->paginate($perPage)->withQueryString();
-
+        public function show(Post $post)
+    {
         return response()->json([
             'success' => true,
-            'data' => $posts->items(),
-            'meta' => [
-                'current_page' => $posts->currentPage(),
-                'per_page' => $posts->perPage(),
-                'total' => $posts->total(),
-                'last_page' => $posts->lastPage(),
-            ]
+            'post' => $post->load(['user', 'category'])
         ]);
-
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation failed',
-            'errors' => $e->errors(),
-        ], 422);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Something went wrong',
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ], 500);
     }
-}
+    
 
+public function index(Request $request)
+{
+    // ✅ Validate query params
+    $validated = $request->validate([
+        'q'        => 'nullable|string|max:255',
+        'per_page' => 'nullable|integer|min:1|max:50',
+    ]);
+
+    $perPage = $validated['per_page'] ?? 10;
+
+    // ✅ Base query
+    $query = Post::with(['user', 'category', 'comments']);
+
+    // ✅ Search filter
+    if (!empty($validated['q'])) {
+        $query->where(function ($q) use ($validated) {
+            $q->where('title', 'like', '%' . $validated['q'] . '%')
+              ->orWhere('body', 'like', '%' . $validated['q'] . '%');
+        });
+    }
+
+    // ✅ Pagination
+    $posts = $query->latest()
+                   ->paginate($perPage)
+                   ->withQueryString();
+
+    // ✅ Response (custom format + PostCollection)
+    return response()->json([
+        'success' => true,
+        'data'    => PostCollection::make($posts)->collection,
+        'meta'    => [
+            'current_page' => $posts->currentPage(),
+            'per_page'     => $posts->perPage(),
+            'total'        => $posts->total(),
+            'last_page'    => $posts->lastPage(),
+        ],
+    ]);
+}
 
 
 public function store(Request $request)

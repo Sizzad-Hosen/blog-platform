@@ -12,12 +12,12 @@ class PostCollection extends ResourceCollection
     {
         return [
             'data' => $this->collection,
-            'meta' => [
-                'current_page' => $this->resource->currentPage(),
-                'last_page'    => $this->resource->lastPage(),
-                'per_page'     => $this->resource->perPage(),
-                'total'        => $this->resource->total(),
-            ],
+            // 'meta' => [
+            //     'current_page' => $this->$request->currentPage(),
+            //     'last_page'    => $this->$request->lastPage(),
+            //     'per_page'     => $this->$request->perPage(),
+            //     'total'        => $this->$request->total(),
+            // ],
         ];
     }
 }
