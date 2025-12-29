@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Http\Resources\CategoryCollection;
@@ -84,11 +83,6 @@ class CategoryController extends Controller
 
         $data = $request->only(['name', 'description']);
         
-        // Update slug if name changed
-        if ($request->has('name') && $request->name !== $category->name) {
-            $data['slug'] = Str::slug($request->name);
-        }
-
         $category->update($data);
 
         return $this->sendResponse(new CategoryResource($category), 'Category updated successfully');
@@ -98,6 +92,6 @@ class CategoryController extends Controller
     {
         $category->delete();
 
-        return $this->sendResponse(null, 'Category deleted successfully', Response::HTTP_NO_CONTENT);
+        return $this->sendResponse(null, 'Category deleted successfully');
     }
 }

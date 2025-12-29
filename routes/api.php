@@ -26,11 +26,12 @@ Route::prefix('admin')->group(base_path('routes/admin.php'));
 // User access routes
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('posts/{post}', [PostController::class, 'update']);
-    Route::delete('posts/{post}', [PostController::class, 'softDelete']);
     Route::patch('posts/{post}/comments/{comment}', [CommentController::class, 'update']);
     Route::delete('comments/{comment}', [CommentController::class, 'softDelete']);
     Route::post('posts', [PostController::class, 'store']);
     Route::post('posts/{post}/comments', [CommentController::class, 'store']);
+    Route::patch('posts/{post}/restore', [PostController::class, 'restore']);
+    Route::delete('posts/{post}/force', [PostController::class, 'forceDelete']);
   
 });
 

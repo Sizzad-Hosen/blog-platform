@@ -15,7 +15,7 @@ class PostPolicy
 
 public function forceDelete(User $user, Post $post)
 {
-    return $user->role === 'admin';
+    return $user->id === $post->user_id;
 }
 
 public function restore(User $user, Post $post)
@@ -23,13 +23,11 @@ public function restore(User $user, Post $post)
     return $user->role === 'admin';
 }
 
-public function update(User $user, Post $post): Response
-{
-   
-
- return $user->id === $post->user_id || $user->role === 'admin'
-        ? Response::allow()
-        : Response::denyAsNotFound();
-}
+    public function update(User $user, Post $post): Response
+    {
+        return $user->id === $post->user_id || $user->role === 'admin'
+            ? Response::allow()
+            : Response::deny('Unauthorized');
+    }
 
 }

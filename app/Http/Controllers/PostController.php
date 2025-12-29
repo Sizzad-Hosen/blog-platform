@@ -8,87 +8,115 @@ use App\Models\Post;
 use App\Http\Resources\PostCollection;
 use App\Http\Resources\PostResource;
 use Illuminate\Http\Response;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class PostController extends Controller
 {
     use ResponseTrait;
-
-
+    use AuthorizesRequests;
 public function index(Request $request)
 {
-    $request->validate([
-        'q' => 'nullable|string|max:255',
-        'per_page' => 'nullable|integer|min:1|max:50',
+    try {
+        // Validate query params
+        $request->validate([
+            'q' => 'nullable|string|max:255',
+            'per_page' => 'nullable|integer|min:1|max:50',
+        ]);
+
+        $perPage = $request->get('per_page', 10);
+
+        // Query posts with relationships
+        $query = Post::with(['user', 'category', 'comments']);
+
+        // Search filter
+        if ($request->filled('q')) {
+            $keyword = $request->q;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', "%{$keyword}%")
+                  ->orWhere('body', 'like', "%{$keyword}%");
+            });
+        }
+
+        // Only non-deleted posts (if using SoftDeletes)
+        if (in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses(Post::class))) {
+            $query->whereNull('deleted_at');
+        }
+
+        // Paginate results
+        $posts = $query->latest()->paginate($perPage)->withQueryString();
+
+        return response()->json([
+            'success' => true,
+            'data' => $posts->items(),
+            'meta' => [
+                'current_page' => $posts->currentPage(),
+                'per_page' => $posts->perPage(),
+                'total' => $posts->total(),
+                'last_page' => $posts->lastPage(),
+            ]
+        ]);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $e->errors(),
+        ], 422);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Something went wrong',
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+}
+
+
+
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'body' => 'required|string',
+        'category_id' => 'required|exists:categories,id',
     ]);
 
-    $perPage = $request->get('per_page', 10);
+    $postData = [
+        'title' => $validated['title'],
+        'body' => $validated['body'],
+        'category_id' => $validated['category_id'],
+        'user_id' => $request->user()->id,
+    ];
 
-    $query = Post::with(['user', 'category', 'comments']);
+    $post = Post::create($postData);
 
-    if ($request->filled('q')) {
-        $query->where(function ($q) use ($request) {
-            $q->where('title', 'like', "%{$request->q}%")
-              ->orWhere('body', 'like', "%{$request->q}%");
-        });
-    }
-
-    return new PostCollection(
-        $query->latest()->paginate($perPage)->withQueryString()
-    );
+    return response()->json([
+        'success' => true,
+        'data' => $post,
+        'message' => 'Post created successfully'
+    ], 201);
 }
-    public function store(Request $request)
-    {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'body' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-        ]);
+public function update(Request $request, Post $post)
+{
+    $this->authorize('update', $post);
 
-        $post = Post::create([
-            'title' => $request->title,
-            'body' => $request->body,
-            'category_id' => $request->category_id,
-            'user_id' => $request->user()->id,
-        ]);
+    $validated = $request->validate([
+        'title' => 'sometimes|required|string|max:255',
+        'body' => 'sometimes|required|string',
+        'category_id' => 'sometimes|required|exists:categories,id',
+    ]);
 
-        return $this->sendResponse(
-            new PostResource($post),
-            'Post created successfully',
-            Response::HTTP_CREATED
-        );
-    }
+    $post->update($validated);
 
-    public function update(Request $request, Post $post)
-    {
-        $this->authorize('update', $post);
+    return response()->json([
+        'success' => true,
+        'message' => 'Post updated successfully',
+        'post' => $post
+    ]);
+}
 
-        $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'body' => 'sometimes|required|string',
-            'category_id' => 'sometimes|required|exists:categories,id',
-        ]);
-
-        $post->update(
-            $request->only(['title', 'body', 'category_id'])
-        );
-
-        return response()->json([
-            'message' => 'Post updated successfully',
-            'post' => $post
-        ]);
-    }
-
-    public function softDelete(Post $post)
-    {
-        $this->authorize('delete', $post);
-
-        $post->delete();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Post moved to trash'
-        ]);
-    }
 
     public function restore($postId)
     {
